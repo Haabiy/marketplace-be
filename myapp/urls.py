@@ -3,12 +3,18 @@ from django.urls import path
 from django.views import debug
 from myapp import authlogin, crud, sstatus
 
-from rest_framework_simplejwt.views import TokenObtainPairView
+#from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
 urlpatterns = [
-    path('', debug.default_urlconf), # returns the default page for / end-point
+    path('', debug.default_urlconf), 
+    
+    # Auth
     path('api/login/', authlogin.login_view, name='login'),
+
+    #JWT
+    #path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    #path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     #CRUD
     path('api/add-source/', crud.add_new_source, name="add_source"),

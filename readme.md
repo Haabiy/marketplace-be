@@ -9,12 +9,16 @@ A simple Django API for managing data sources with endpoints for adding, updatin
 - **Read Sources:** `GET /api/read-source/`
 - **Update Source:** `PUT/PATCH/POST /api/update-source/<uuid:id>/`
 - **Delete Source:** `DELETE/POST /api/delete-source/<uuid:id>/`
+- **Activate Source:** `POST /api/activate-source/<uuid:source_id>/`
+- **Deactivate Source:** `POST /api/deactivate-source/<uuid:source_id>/`
+- **Reactivate Source:** `POST /api/reactivate-source/<uuid:source_id>/`
+- **Data Library:** `GET /api/data-library/`
 
 ## URL Patterns
 
 ```python
 urlpatterns = [
-    path('', debug.default_urlconf), # returns the default page for / end-point
+    # Auth
     path('api/login/', authlogin.login_view, name='login'),
 
     #CRUD
