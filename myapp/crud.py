@@ -24,12 +24,15 @@ from django.views.decorators.csrf import csrf_exempt
 from .serializers import SourceSerializer
 from .models import SourceModel
 
+import json
 import logging
 
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
 @api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def add_new_source(request):
     if request.method == 'POST':
         if request.FILES:
@@ -60,6 +63,8 @@ def data_sources(request):
     
 @csrf_exempt
 @api_view(['PUT', 'PATCH', 'POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def update_source(request, id):
     try:
         source = SourceModel.objects.get(id=id)
@@ -85,9 +90,13 @@ def update_source(request, id):
 
 @csrf_exempt
 @api_view(['DELETE', 'POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def delete_source(request, id):
     if request.method in ['DELETE', 'POST']:
-        delete_source = get_object_or_404(SourceModel, id=id)
-        delete_source.delete()
-        return JsonResponse({'message': 'Source deleted successfully'}, status=204)
-
+        try:
+            delete_source = get_object_or_404(SourceModel, id=id)
+            delete_source.delete()
+            return JsonResponse({'message': 'Source deleted successfully'}, status=204)
+        except SourceModel.DoesNotExist:
+            return Response({'error': 'Source not found'}, status=404)

@@ -43,10 +43,13 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins during development
-CORS_ORIGIN_WHITELIST = [
-    'http://localhost:3000',  # Add your React frontend URL
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
 ]
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+]
+CORS_ALLOW_CREDENTIALS = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -56,6 +59,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
 
@@ -70,15 +74,15 @@ REST_FRAMEWORK = {
     ]
 }
 
-'''REST_FRAMEWORK = {
+REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-}'''
+}
 
-'''SIMPLE_JWT = {
+SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
-}'''
+}
 
 TEMPLATES = [
     {

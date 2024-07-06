@@ -15,6 +15,12 @@ from django.contrib.auth import authenticate
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.authentication import BasicAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.authentication import SessionAuthentication
+
 from .serializers import SourceSerializer
 from .models import SourceModel
 
@@ -26,6 +32,8 @@ logger = logging.getLogger(__name__)
 
 @csrf_exempt
 @api_view(['POST', 'PUT'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def activate_source(request, source_id):
     try:
         source = SourceModel.objects.get(id=source_id)
@@ -55,6 +63,8 @@ def activate_source(request, source_id):
         return Response({"error": "Source not found"}, status=404)
 @csrf_exempt
 @api_view(['POST', 'PUT'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def deactivate_source(request, source_id):
     try:
         source = SourceModel.objects.get(id=source_id)
@@ -82,8 +92,11 @@ def deactivate_source(request, source_id):
         })
     except SourceModel.DoesNotExist:
         return Response({"error": "Source not found"}, status=404)
+
 @csrf_exempt
 @api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def reactivate_source(request, source_id):
     try:
         source = SourceModel.objects.get(id=source_id)
@@ -114,6 +127,8 @@ def reactivate_source(request, source_id):
 
 @csrf_exempt  
 @api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def data_library(request):
     """
     API endpoint to summarize the status of sources created 30 days or earlier.
