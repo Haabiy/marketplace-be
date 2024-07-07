@@ -1,6 +1,6 @@
 ## Overview
 
-This project is the backend application for marketplace-fe, a marketplace platform. It is built using Django, ensuring compatibility with marketplace-fe's API (use the same version release tags, e.g: v0.0.1 for both marketplace-fe(frontend) and marketplace-be(backend).
+This project is the backend application for marketplace-fe, https://github.com/Haabiy/marketplace-fe, a marketplace UI. It is built using Django, ensuring compatibility with marketplace-fe's API (use the same version release tags, e.g: v0.0.1 for both marketplace-fe(frontend) and marketplace-be(backend).
 ## Endpoints
 
 - **Login:** `POST /api/login/`
