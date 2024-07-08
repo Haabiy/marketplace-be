@@ -10,6 +10,7 @@ urlpatterns = [
     path('', debug.default_urlconf), 
     
     # Login/Logout
+    path('register/', authlogin.register, name='register'),
     path('login/', authlogin.login_view, name='login'),
     path('logout/', authlogin.logout_view, name='logout'),
 

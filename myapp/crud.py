@@ -24,10 +24,27 @@ from django.views.decorators.csrf import csrf_exempt
 from .serializers import SourceSerializer
 from .models import SourceModel
 
+from datetime import datetime
+
+
 import json
 import logging
 
 logger = logging.getLogger(__name__)
+
+'''def parse_date(date_str):
+    try:
+        # Split the date string to handle the part before the parentheses
+        print(date_str)
+        main_part = date_str.split(' (')[0]
+        print(main_part)
+        # Parse the main part with the time zone offset
+        parsed_date = datetime.strptime(main_part, '%a %b %d %Y %H:%M:%S %Z%z')
+        # Return the date formatted as 'yyyy-mm-dd'
+        return parsed_date.strftime('%Y-%m-%d')
+    except ValueError as e:
+        print(f"Error parsing date: {e}")
+        return None'''
 
 @csrf_exempt
 @api_view(['POST'])
@@ -69,6 +86,14 @@ def update_source(request, id):
     try:
         source = SourceModel.objects.get(id=id)
         data = request.data.copy()
+        
+        '''if 'current_update' in data and data['current_update']:
+            formatted_date = parse_date(data['current_update'])
+            if formatted_date:
+                data['current_update'] = formatted_date
+            else:
+                return JsonResponse({"error": "Invalid date format for current_update"}, status=400)'''
+        
         # handles if the user chooses an empty next_update
         if 'next_update' in data and data['next_update'] in [None, 'undefined', '', 'unscheduled']:
             #data['next_update'] = '' or
