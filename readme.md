@@ -54,3 +54,6 @@ urlpatterns = [
 - **delete_source:** Deletes a data source.
 
 ---
+`brew services list`
+
+`brew services start redis`
