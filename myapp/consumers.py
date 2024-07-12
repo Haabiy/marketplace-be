@@ -33,76 +33,8 @@ from .serializers import SourceSerializer
 from .models import SourceModel
 
 from datetime import datetime
-
-
+from asgiref.sync import async_to_sync
 import json
-
-class ActivationSourcesConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
-        self.group_name = 'data_sources_updates'
-        
-        if self.channel_layer:
-            await self.channel_layer.group_add(
-                self.group_name,
-                self.channel_name
-            )
-            await self.accept()
-        else:
-            await self.close()
-
-    async def disconnect(self, close_code):
-        if self.channel_layer:
-            await self.channel_layer.group_discard(
-                self.group_name,
-                self.channel_name
-            )
-
-    async def receive(self, text_data):
-        data = json.loads(text_data)
-        action = data.get('action')
-        source_id = data.get('source_id')
-        print(data)
-        if action == 'activate':
-            response = await self.activate_source(source_id)
-        elif action == 'deactivate':
-            response = await self.deactivate_source(source_id)
-        elif action == 'reactivate':
-            response = await self.reactivate_source(source_id)
-        
-        await self.send(text_data=json.dumps(response))
-
-    @database_sync_to_async
-    def activate_source(self, source_id):
-        try:
-            source = SourceModel.objects.get(id=source_id)
-            source.status = 'active'
-            source.save()
-            serializer = SourceSerializer(source)
-            return {"message": "Source activated successfully", "source": serializer.data}
-        except SourceModel.DoesNotExist:
-            return {"error": "Source not found"}
-
-    @database_sync_to_async
-    def deactivate_source(self, source_id):
-        try:
-            source = SourceModel.objects.get(id=source_id)
-            source.status = 'inactive'
-            source.save()
-            serializer = SourceSerializer(source)
-            return {"message": "Source deactivated successfully", "source": serializer.data}
-        except SourceModel.DoesNotExist:
-            return {"error": "Source not found"}
-
-    @database_sync_to_async
-    def reactivate_source(self, source_id):
-        try:
-            source = SourceModel.objects.get(id=source_id)
-            source.status = 'active'
-            source.save()
-            serializer = SourceSerializer(source)
-            return {"message": "Source reactivated successfully", "source": serializer.data}
-        except SourceModel.DoesNotExist:
-            return {"error": "Source not found"}
 
 class DataLibraryConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -198,6 +130,87 @@ class DataLibraryConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         pass
+    async def handle_data_update(self, event):
+        await self.fetch_data()
+
+class ActivationSourcesConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.group_name = 'data_sources_updates'
+        
+        if self.channel_layer:
+            await self.channel_layer.group_add(
+                self.group_name,
+                self.channel_name
+            )
+            await self.accept()
+        else:
+            await self.close()
+
+    async def disconnect(self, close_code):
+        if self.channel_layer:
+            await self.channel_layer.group_discard(
+                self.group_name,
+                self.channel_name
+            )
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        action = data.get('action')
+        source_id = data.get('source_id')
+        print(data)
+        if action == 'activate':
+            response = await self.activate_source(source_id)
+        elif action == 'deactivate':
+            response = await self.deactivate_source(source_id)
+        elif action == 'reactivate':
+            response = await self.reactivate_source(source_id)
+        
+        await self.send(text_data=json.dumps(response))
+
+        if self.channel_layer:
+            await self.channel_layer.group_send(
+                'data_library_updates',
+                {
+                    'type': 'handle_data_update',
+                    'message': 'Update data library'
+                }
+            )
+
+        await self.send(text_data=json.dumps(response))
+
+    @database_sync_to_async
+    def activate_source(self, source_id):
+        try:
+            source = SourceModel.objects.get(id=source_id)
+            source.status = 'active'
+            source.save()
+            serializer = SourceSerializer(source)
+            return {"message": "Source activated successfully", "source": serializer.data}
+        except SourceModel.DoesNotExist:
+            return {"error": "Source not found"}
+
+    @database_sync_to_async
+    def deactivate_source(self, source_id):
+        try:
+            source = SourceModel.objects.get(id=source_id)
+            source.status = 'inactive'
+            source.save()
+            serializer = SourceSerializer(source)
+            return {"message": "Source deactivated successfully", "source": serializer.data}
+        except SourceModel.DoesNotExist:
+            return {"error": "Source not found"}
+
+    @database_sync_to_async
+    def reactivate_source(self, source_id):
+        try:
+            source = SourceModel.objects.get(id=source_id)
+            source.status = 'active'
+            source.save()
+            serializer = SourceSerializer(source)
+            return {"message": "Source reactivated successfully", "source": serializer.data}
+        except SourceModel.DoesNotExist:
+            return {"error": "Source not found"}
+
 
 class DataSourcesConsumer(AsyncWebsocketConsumer):
     async def connect(self):
