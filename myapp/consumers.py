@@ -34,7 +34,7 @@ from .models import SourceModel
 
 from datetime import datetime
 from asgiref.sync import async_to_sync
-import json
+import json, requests
 
 class DataLibraryConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -157,15 +157,12 @@ class ActivationSourcesConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         action = data.get('action')
         source_id = data.get('source_id')
-        print(data)
         if action == 'activate':
             response = await self.activate_source(source_id)
         elif action == 'deactivate':
             response = await self.deactivate_source(source_id)
         elif action == 'reactivate':
             response = await self.reactivate_source(source_id)
-        
-        await self.send(text_data=json.dumps(response))
 
         if self.channel_layer:
             await self.channel_layer.group_send(
@@ -248,38 +245,81 @@ class DataSourcesConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         pass
 
-class UpdateSourceConsumer(AsyncWebsocketConsumer):
-    
+    async def handle_data_update(self, event):
+        await self.fetch_data_sources()
+
+class SourceConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Accept the WebSocket connection
-        await self.accept()
+        self.group_name = 'data_sources_updates'
+
+        if self.channel_layer:
+            await self.channel_layer.group_add(
+                self.group_name,
+                self.channel_name
+            )
+            await self.accept()
+            #await self.fetch_data_sources()
+        else:
+            await self.close()
 
     async def disconnect(self, close_code):
-        # Disconnect from the WebSocket
-        pass
+        if self.channel_layer:
+            await self.channel_layer.group_discard(
+                self.group_name,
+                self.channel_name
+            )
 
     async def receive(self, text_data):
-        # Handle incoming WebSocket messages
+        data = json.loads(text_data)
+        action = data.get('action')
+        source_id = data.get('source_id')
+        formData = data.get('formData')
+        print(data)
+        if action == 'update_source':
+            response = await self.update_source(source_id, formData)
+        elif action == 'add_source':
+            response = await self.add_source(formData)
+
+        if self.channel_layer:
+            await self.channel_layer.group_send(
+                'data_library_updates',
+                {
+                    'type': 'handle_data_update',
+                    'message': 'Update data library'
+                })
+            await self.channel_layer.group_send(
+                'data_sources_updates',
+                {
+                    'type': 'handle_data_update',
+                    'message': 'Update data sources'
+                }
+            )
+        await self.send(text_data=json.dumps(response))
+
+    @database_sync_to_async
+    def update_source(self, source_id, form_data):
         try:
-            data = JSONParser().parse(text_data)
-            source_id = data.get('id')
-            source_data = data.get('data')
+            source = SourceModel.objects.get(id=source_id)
+            if 'next_update' in form_data and form_data['next_update'] in [None, 'undefined', '', 'unscheduled']:
+                form_data['next_update'] = None
 
-            # Fetch the source model instance
-            try:
-                source = SourceModel.objects.get(id=source_id)
-            except SourceModel.DoesNotExist:
-                await self.send_json({'error': 'Source not found'}, status_code=404)
-                return
+            serializer = SourceSerializer(source, data=form_data, partial=True)
+            
+        except SourceModel.DoesNotExist:
+            return {"status": "error", "message": "Source not found"}
 
-            # Update the source model based on the received data
-            serializer = SourceSerializer(source, data=source_data, partial=True)
-            if serializer.is_valid():
-                print(source_data)
-                serializer.save()
-                await self.send_json(serializer.data, status_code=200)
-            else:
-                await self.send_json(serializer.errors, status_code=400)
-        
-        except Exception as e:
-            await self.send_json({'error': str(e)}, status_code=500)
+        serializer = SourceSerializer(source, data=form_data)
+        if serializer.is_valid():
+            serializer.save()
+            return {"status": "success", "data": serializer.data}
+        else:
+            return {"status": "error", "errors": serializer.errors}
+
+    @database_sync_to_async
+    def add_source(self, form_data):
+        serializer = SourceSerializer(data=form_data)
+        if serializer.is_valid():
+            serializer.save()
+            return {"status": "success", "data": serializer.data}
+        else:
+            return {"status": "error", "errors": serializer.errors}
