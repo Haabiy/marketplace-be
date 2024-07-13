@@ -250,7 +250,7 @@ class DataSourcesConsumer(AsyncWebsocketConsumer):
 
 class SourceConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = 'data_sources_updates'
+        self.group_name = 'source'
 
         if self.channel_layer:
             await self.channel_layer.group_add(
