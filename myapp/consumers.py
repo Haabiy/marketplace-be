@@ -291,7 +291,6 @@ class SourceConsumer(AsyncWebsocketConsumer):
         action = data.get('action')
         source_id = data.get('source_id')
         formData = data.get('formData')
-        #print(data)
         if action == 'update_source':
             response = await self.update_source(source_id, formData)
         elif action == 'add_source':
