@@ -23,12 +23,14 @@ class SourceModel(models.Model):
     next_update = models.DateField(auto_now=False, null=True, blank=True)
     next_status = models.CharField(max_length=50, default='unscheduled')
     datadelivery_status = models.CharField(max_length=50, default='')
+    data_upload = models.FileField(null=True, blank=True)
+    status = models.CharField(max_length=50, default='active') 
 
     def save(self, *args, **kwargs):
         if not self.next_update:
             self.next_status = 'unscheduled'
         else:
-            self.next_status = str(self.next_update) 
+            self.next_status = str(self.next_update)
         if self.current_update and self.current_update > now_paris.date():
             self.datadelivery_status = 'awaiting'
         elif self.current_update and self.current_update == now_paris.date():
@@ -36,5 +38,5 @@ class SourceModel(models.Model):
         else:
             self.datadelivery_status = 'delayed'
         super().save(*args, **kwargs)
-    data_upload = models.FileField(null=True, blank=True)
-    status = models.CharField(max_length=50, default='active') 
+
+
