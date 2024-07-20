@@ -3,7 +3,7 @@ from django.dispatch import Signal, receiver
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-crud,lib, source, toggle, source_lib = (Signal() for i in range(5))
+crud, lib, source, toggle, source_lib = (Signal() for i in range(5))
 
 @receiver(crud)
 def CRUDSourceSignal(sender, **kwargs):

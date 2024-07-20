@@ -80,10 +80,9 @@ class DataLibraryConsumer(AsyncWebsocketConsumer):
         active_count = getstatus.filter(status='active', created_at__gt=thirty_days_ago).count()
         inactive_count = getstatus.filter(status='inactive', created_at__gt=thirty_days_ago).count()
         total_count = active_count + inactive_count
-
-        received_count = getstatus.filter(current_update=today).count()
-        awaiting_count = getstatus.filter(current_update__gt=today).count()
-        delayed_count = getstatus.filter(current_update__lt=today).count()
+        received_count = getstatus.filter(datadelivery_status='received').count()
+        awaiting_count = getstatus.filter(datadelivery_status='awaiting').count()
+        delayed_count = getstatus.filter(datadelivery_status='delayed').count()
 
         pending_count = 12
         in_progress_count = 5
@@ -243,7 +242,20 @@ class DataSourcesConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_data_sources(self):
+        now_utc = timezone.now()
+        # Convert to 'Europe/Paris' timezone
+        now_paris = now_utc.astimezone(timezone.get_current_timezone())
         source_models = SourceModel.objects.order_by('-created_at')
+        for source in source_models:
+            source.next_status = 'unscheduled' if not source.next_update else str(source.next_update)
+            if source.datadelivery_status!= 'received':
+                if source.current_update and source.current_update > now_paris.date():
+                    source.datadelivery_status = 'awaiting'
+                elif source.current_update and source.current_update == now_paris.date():
+                    source.datadelivery_status = 'received'
+                else:
+                    source.datadelivery_status = 'delayed'
+            pass
         serializer = SourceSerializer(source_models, many=True)
         return serializer.data
 
