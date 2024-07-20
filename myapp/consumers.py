@@ -38,7 +38,7 @@ import json, requests
 
 class DataLibraryConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = 'data_library_updates'
+        self.group_name = 'DataLibrary'
 
         # Join group
         if self.channel_layer:
@@ -135,7 +135,7 @@ class DataLibraryConsumer(AsyncWebsocketConsumer):
 
 class ActivationSourcesConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = 'data_sources_updates'
+        self.group_name = 'ToggleVisibility'
         
         if self.channel_layer:
             await self.channel_layer.group_add(
@@ -166,7 +166,7 @@ class ActivationSourcesConsumer(AsyncWebsocketConsumer):
 
         if self.channel_layer:
             await self.channel_layer.group_send(
-                'data_library_updates',
+                'DataLibrary',
                 {
                     'type': 'handle_data_update',
                     'message': 'Update data library'
@@ -211,7 +211,7 @@ class ActivationSourcesConsumer(AsyncWebsocketConsumer):
 
 class DataSourcesConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = 'data_sources_updates'
+        self.group_name = 'DataSource'
 
         if self.channel_layer:
             await self.channel_layer.group_add(
@@ -250,7 +250,7 @@ class DataSourcesConsumer(AsyncWebsocketConsumer):
 
 class SourceConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = 'source'
+        self.group_name = 'CRUDSource'
 
         if self.channel_layer:
             await self.channel_layer.group_add(
@@ -274,7 +274,7 @@ class SourceConsumer(AsyncWebsocketConsumer):
         action = data.get('action')
         source_id = data.get('source_id')
         formData = data.get('formData')
-        print(data)
+        #print(data)
         if action == 'update_source':
             response = await self.update_source(source_id, formData)
         elif action == 'add_source':
@@ -282,16 +282,17 @@ class SourceConsumer(AsyncWebsocketConsumer):
 
         if self.channel_layer:
             await self.channel_layer.group_send(
-                'data_library_updates',
+                'DataLibrary',
                 {
                     'type': 'handle_data_update',
-                    'message': 'Update data library'
-                })
+                    'message': ({ "type": "update data sources"})
+                }
+            )
             await self.channel_layer.group_send(
-                'data_sources_updates',
+                'DataSource',
                 {
                     'type': 'handle_data_update',
-                    'message': 'Update data sources'
+                    'message': ({ "type": "update data sources"})
                 }
             )
         await self.send(text_data=json.dumps(response))
