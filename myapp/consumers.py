@@ -242,20 +242,7 @@ class DataSourcesConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_data_sources(self):
-        now_utc = timezone.now()
-        # Convert to 'Europe/Paris' timezone
-        now_paris = now_utc.astimezone(timezone.get_current_timezone())
         source_models = SourceModel.objects.order_by('-created_at')
-        for source in source_models:
-            source.next_status = 'unscheduled' if not source.next_update else str(source.next_update)
-            if source.datadelivery_status!= 'received':
-                if source.current_update and source.current_update > now_paris.date():
-                    source.datadelivery_status = 'awaiting'
-                elif source.current_update and source.current_update == now_paris.date():
-                    source.datadelivery_status = 'received'
-                else:
-                    source.datadelivery_status = 'delayed'
-            pass
         serializer = SourceSerializer(source_models, many=True)
         return serializer.data
 
