@@ -45,15 +45,28 @@ urlpatterns = [
 ]
 ```
 
-## Key Functions
+## Notification settings
+sending updates whenever we make changes
 
-- **login_view:** Handles user login.
-- **add_new_source:** Adds a new data source.
-- **data_sources:** Retrieves all data sources.
-- **update_source:** Updates an existing data source.
-- **delete_source:** Deletes a data source.
-
----
-`brew services list`
-
-`brew services start redis`
+```python
+async def handle_data_update(self, event):
+    await self.fetch_data_sources()
+```
+```python
+if self.channel_layer:
+    await self.channel_layer.group_send(
+        'DataLibrary',
+        {
+            'type': 'handle_data_update',
+            'message': ({ "type": "update data sources"})
+        }
+    )
+    await self.channel_layer.group_send(
+        'DataSource',
+        {
+            'type': 'handle_data_update',
+            'message': ({ "type": "update data sources"})
+        }
+    )
+await self.send(text_data=json.dumps(response))
+```

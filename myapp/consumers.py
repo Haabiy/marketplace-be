@@ -36,6 +36,8 @@ from datetime import datetime
 from asgiref.sync import async_to_sync
 import json, requests
 
+from .signals import *
+
 class DataLibraryConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.group_name = 'DataLibrary'
@@ -164,7 +166,7 @@ class ActivationSourcesConsumer(AsyncWebsocketConsumer):
         elif action == 'reactivate':
             response = await self.reactivate_source(source_id)
 
-        if self.channel_layer:
+        '''if self.channel_layer:
             await self.channel_layer.group_send(
                 'DataLibrary',
                 {
@@ -173,7 +175,7 @@ class ActivationSourcesConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-        await self.send(text_data=json.dumps(response))
+        await self.send(text_data=json.dumps(response))'''
 
     @database_sync_to_async
     def activate_source(self, source_id):
@@ -181,6 +183,7 @@ class ActivationSourcesConsumer(AsyncWebsocketConsumer):
             source = SourceModel.objects.get(id=source_id)
             source.status = 'active'
             source.save()
+            lib.send(sender=self.__class__, message="Update data library")
             serializer = SourceSerializer(source)
             return {"message": "Source activated successfully", "source": serializer.data}
         except SourceModel.DoesNotExist:
@@ -192,6 +195,7 @@ class ActivationSourcesConsumer(AsyncWebsocketConsumer):
             source = SourceModel.objects.get(id=source_id)
             source.status = 'inactive'
             source.save()
+            lib.send(sender=self.__class__, message="Update data library")
             serializer = SourceSerializer(source)
             return {"message": "Source deactivated successfully", "source": serializer.data}
         except SourceModel.DoesNotExist:
@@ -203,6 +207,7 @@ class ActivationSourcesConsumer(AsyncWebsocketConsumer):
             source = SourceModel.objects.get(id=source_id)
             source.status = 'active'
             source.save()
+            lib.send(sender=self.__class__, message="Update data library")
             serializer = SourceSerializer(source)
             return {"message": "Source reactivated successfully", "source": serializer.data}
         except SourceModel.DoesNotExist:
@@ -280,7 +285,7 @@ class SourceConsumer(AsyncWebsocketConsumer):
         elif action == 'add_source':
             response = await self.add_source(formData)
 
-        if self.channel_layer:
+        '''if self.channel_layer:
             await self.channel_layer.group_send(
                 'DataLibrary',
                 {
@@ -295,7 +300,7 @@ class SourceConsumer(AsyncWebsocketConsumer):
                     'message': ({ "type": "update data sources"})
                 }
             )
-        await self.send(text_data=json.dumps(response))
+        await self.send(text_data=json.dumps(response))'''
 
     @database_sync_to_async
     def update_source(self, source_id, form_data):
@@ -312,6 +317,7 @@ class SourceConsumer(AsyncWebsocketConsumer):
         serializer = SourceSerializer(source, data=form_data)
         if serializer.is_valid():
             serializer.save()
+            source_lib.send(sender=self.__class__, message="Update data library")
             return {"status": "success", "data": serializer.data}
         else:
             return {"status": "error", "errors": serializer.errors}
