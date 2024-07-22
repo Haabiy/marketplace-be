@@ -27,10 +27,7 @@ class SourceModel(models.Model):
     status = models.CharField(max_length=50, default='active') 
 
     def save(self, *args, **kwargs):
-        if not self.next_update:
-            self.next_status = 'unscheduled'
-        else:
-            self.next_status = str(self.next_update)
+        self.next_status = 'unscheduled' if not self.next_update else str(self.next_update)
         if self.current_update and self.current_update > now_paris.date():
             self.datadelivery_status = 'awaiting'
         elif self.current_update and self.current_update == now_paris.date():
