@@ -70,3 +70,12 @@ if self.channel_layer:
     )
 await self.send(text_data=json.dumps(response))
 ```
+
+Django Tips
+
+The default attribute in Django models sets the default value for a field when a new model instance is created and that field is not explicitly set. However, if the field is explicitly set to an empty value (e.g., an empty string) in the form data, the default value will not be applied. The default attribute only comes into play when the field is not present at all in the provided data.
+
+```python
+granularity = models.CharField(max_length=255, default='National')
+
+```

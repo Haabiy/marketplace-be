@@ -279,9 +279,9 @@ class SourceConsumer(AsyncWebsocketConsumer):
         source_id = data.get('source_id')
         formData = data.get('formData')
         if action == 'update_source':
-            response = await self.update_source(source_id, formData)
+            await self.update_source(source_id, formData)
         elif action == 'add_source':
-            response = await self.add_source(formData)
+            await self.add_source(formData)
 
         '''if self.channel_layer:
             await self.channel_layer.group_send(
@@ -322,9 +322,12 @@ class SourceConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def add_source(self, form_data):
+        #form_data['next_update'] = None if(form_data['next_update']=='') else form_data['next_update']
         serializer = SourceSerializer(data=form_data)
         if serializer.is_valid():
             serializer.save()
+            source_lib.send(sender=self.__class__, message="Update data library")
+            print('serializer_data---:', serializer.data)
             return {"status": "success", "data": serializer.data}
         else:
             return {"status": "error", "errors": serializer.errors}
