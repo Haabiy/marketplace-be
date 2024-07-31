@@ -1,51 +1,96 @@
-## Overview
+# Overview
 
 This project is the backend application for marketplace-fe, https://github.com/Haabiy/marketplace-fe, a marketplace UI. It is built using Django, ensuring compatibility with marketplace-fe's API (use the same version release tags, e.g: v0.0.1 for both marketplace-fe(frontend) and marketplace-be(backend).
-## Endpoints
 
-- **Login:** `POST /api/login/`
-- **Add Source:** `POST /api/add-source/`
-- **Read Sources:** `GET /api/read-source/`
-- **Update Source:** `PUT/PATCH/POST /api/update-source/<uuid:id>/`
-- **Delete Source:** `DELETE/POST /api/delete-source/<uuid:id>/`
-- **Activate Source:** `POST /api/activate-source/<uuid:source_id>/`
-- **Deactivate Source:** `POST /api/deactivate-source/<uuid:source_id>/`
-- **Reactivate Source:** `POST /api/reactivate-source/<uuid:source_id>/`
-- **Data Library:** `GET /api/data-library/`
+<img src="./Assets/Consumer-Vs-Signal.png" alt="ASGI-Layout">
 
-## URL Patterns
+# Based on WebSocket Consumers
 
-```python
-urlpatterns = [
-    path('api/', include('myapp.urls')),
-    path('admin/', admin.site.urls),
-]
-```
+### DataLibraryConsumer
 
-```python
-urlpatterns = [
-    path('', debug.default_urlconf), 
-    
-    # Login/Logout
-    path('login/', authlogin.login_view, name='login'),
-    path('logout/', authlogin.logout_view, name='logout'),
+Manages the real-time display of data library metrics.
 
-    #CRUD
-    path('add-source/', crud.add_new_source, name="add_source"),
-    path('read-source/', crud.data_sources, name="data_source"),
-    path('update-source/<uuid:id>/', crud.update_source, name='update_source'),
-    path('delete-source/<uuid:id>/', crud.delete_source, name='delete_source'),
+- **Group Name**: `DataLibrary`
+- **Functions**:
+  - `connect`: Joins the WebSocket group.
+  - `disconnect`: Leaves the WebSocket group.
+  - `fetch_data`: Retrieves and sends the latest data metrics.
+  - `get_data`: Fetches data from the database (runs synchronously).
 
-    #STATUS
-    path('activate-source/<uuid:source_id>/', sstatus.activate_source, name='activate_source'),
-    path('deactivate-source/<uuid:source_id>/', sstatus.deactivate_source, name='deactivate_source'),
-    path('reactivate-source/<uuid:source_id>/', sstatus.reactivate_source, name='reactivate_source'),
-    path('data-library/', sstatus.data_library, name='data-library'),
+### ActivationSourcesConsumer
 
-]
-```
+Handles activation, deactivation, and reactivation of sources.
 
-## Notification settings
+- **Group Name**: `ToggleVisibility`
+- **Functions**:
+  - `connect`: Joins the WebSocket group.
+  - `disconnect`: Leaves the WebSocket group.
+  - `receive`: Processes activation-related actions.
+  - `activate_source`: Activates a source.
+  - `deactivate_source`: Deactivates a source.
+  - `reactivate_source`: Reactivates a source.
+
+### DataSourcesConsumer
+
+Provides real-time updates of data sources.
+
+- **Group Name**: `DataSource`
+- **Functions**:
+  - `connect`: Joins the WebSocket group.
+  - `disconnect`: Leaves the WebSocket group.
+  - `fetch_data_sources`: Retrieves and sends the latest data sources.
+  - `get_data_sources`: Fetches data sources from the database (runs synchronously).
+
+### SourceConsumer
+
+Manages CRUD operations for sources.
+
+- **Group Name**: `CRUDSource`
+- **Functions**:
+  - `connect`: Joins the WebSocket group.
+  - `disconnect`: Leaves the WebSocket group.
+  - `receive`: Processes CRUD-related actions.
+  - `update_source`: Updates an existing source.
+  - `add_source`: Adds a new source.
+
+## Signals
+
+Signals are used to notify WebSocket groups about data changes.
+
+- **Signals**:
+  - `crud`
+  - `lib`
+  - `source`
+  - `toggle`
+  - `source_lib`
+
+- **Signal Receivers**:
+  - `CRUDSourceSignal`: Handles CRUD operations.
+  - `DataLibrarySignal`: Updates the data library.
+  - `DataSourceSignal`: Updates data sources.
+  - `DataSource_DataLibSignal`: Updates both data sources and library.
+  - `ToggleVisibilitySignal`: Toggles source visibility.
+
+## Installation
+
+1. Clone the repository.
+2. Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3. Run the Django development server:
+    ```bash
+    python manage.py runserver
+    ```
+
+## Usage
+
+1. Connect to the WebSocket endpoints for real-time updates.
+2. Use the provided WebSocket consumers to manage data operations.
+3. Signals will automatically update the connected clients upon data changes.
+
+
+## Django Tips - Notification settings
 sending updates whenever we make changes
 
 ```python
@@ -71,7 +116,7 @@ if self.channel_layer:
 await self.send(text_data=json.dumps(response))
 ```
 
-Django Tips
+## Django Tips - Model Fields
 
 The default attribute in Django models sets the default value for a field when a new model instance is created and that field is not explicitly set. However, if the field is explicitly set to an empty value (e.g., an empty string) in the form data, the default value will not be applied. The default attribute only comes into play when the field is not present at all in the provided data.
 

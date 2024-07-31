@@ -44,19 +44,6 @@ def DataSourceSignal(sender, **kwargs):
         }
     )
 
-@receiver(lib)
-def DataLibrarySignal(sender, **kwargs):
-    channel_layer = get_channel_layer()
-    message = kwargs['message']
-
-    async_to_sync(channel_layer.group_send)(
-        'DataLibrary',
-        {
-            'type': 'handle_data_update',
-            'message': message
-        }
-    )
-
 @receiver(source_lib)
 def DataSource_DataLibSignal(sender, **kwargs):
     channel_layer = get_channel_layer()

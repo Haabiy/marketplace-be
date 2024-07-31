@@ -322,7 +322,7 @@ class SourceConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def add_source(self, form_data):
-        #form_data['next_update'] = None if(form_data['next_update']=='') else form_data['next_update']
+        form_data['next_update'] = None if(form_data['next_update']=='') else form_data['next_update']
         serializer = SourceSerializer(data=form_data)
         if serializer.is_valid():
             serializer.save()

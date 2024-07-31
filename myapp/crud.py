@@ -121,6 +121,7 @@ def delete_source(request, id):
     if request.method in ['DELETE', 'POST']:
         try:
             delete_source = get_object_or_404(SourceModel, id=id)
+            print('Here is the delete source', delete_source)
             delete_source.delete()
             return JsonResponse({'message': 'Source deleted successfully'}, status=204)
         except SourceModel.DoesNotExist:
