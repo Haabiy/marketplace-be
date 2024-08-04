@@ -259,6 +259,61 @@ class DataSourcesConsumer(AsyncWebsocketConsumer):
     async def handle_data_update(self, event):
         await self.fetch_data_sources()
 
+class FilterDataSourcesConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.group_name = 'FilterDataSource'
+
+        if self.channel_layer:
+            await self.channel_layer.group_add(
+                self.group_name,
+                self.channel_name
+            )
+            await self.accept()
+
+        else:
+            await self.close()
+
+    async def disconnect(self, close_code):
+        if self.channel_layer:
+            await self.channel_layer.group_discard(
+                self.group_name,
+                self.channel_name
+            )
+
+    async def fetch_data_sources(self):
+        await self.filter_data_sources()
+
+    @database_sync_to_async
+    def filter_data_sources(self, id):
+        source = SourceModel.objects.get(id=id)
+        #source_models = SourceModel.objects.order_by('-created_at')
+        serializer = SourceSerializer(source)
+        print(serializer.data)
+        return serializer.data
+
+    async def receive(self, text_data):
+        # Parse incoming WebSocket message
+        data = json.loads(text_data)
+        action = data.get('action')
+        print(data)
+        if action == 'filter_by_id':
+            source_id = data.get('id')
+            if source_id:
+                # Fetch data source by ID and send back the response
+                data_source = await self.filter_data_sources(source_id)
+                await self.send(text_data=json.dumps({
+                    'status': 'success',
+                    'data': data_source
+                }))
+            else:
+                await self.send(text_data=json.dumps({
+                    'status': 'error',
+                    'message': 'ID not provided'
+                }))
+
+    async def handle_data_update(self, event):
+        await self.fetch_data_sources()
+
 class SourceConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.group_name = 'CRUDSource'
