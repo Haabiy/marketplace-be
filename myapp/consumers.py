@@ -34,9 +34,16 @@ from .models import SourceModel
 
 from datetime import datetime
 from asgiref.sync import async_to_sync
-import json, requests
+import json, requests, os
 
 from .signals import *
+
+import boto3, logging
+from dotenv import load_dotenv
+
+load_dotenv()
+
+#logger = logging.getLogger(__name__)
 
 class DataLibraryConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -331,3 +338,84 @@ class SourceConsumer(AsyncWebsocketConsumer):
             return {"status": "success", "data": serializer.data}
         else:
             return {"status": "error", "errors": serializer.errors}
+        
+class EMRConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.group_name = 'EMR'
+        
+        if self.channel_layer:
+            await self.channel_layer.group_add(
+                self.group_name,
+                self.channel_name
+            )
+            await self.accept()
+        else:
+            await self.close()
+
+    async def disconnect(self, close_code):
+        if self.channel_layer:
+            await self.channel_layer.group_discard(
+                self.group_name,
+                self.channel_name
+            )
+
+    async def receive(self, text_data):
+        try:
+            data = json.loads(text_data)
+            step = data.get('step')
+            if step:
+                result = await self.EMRRunner(step)
+                await self.send(text_data=json.dumps(result))
+            else:
+                await self.send(text_data=json.dumps({'success': False, 'error': 'No step provided'}))
+        except Exception as e:
+            #logger.error(f"Error receiving data: {str(e)}")
+            await self.send(text_data=json.dumps({'success': False, 'error': str(e)}))
+
+    async def EMRRunner(self, step):
+        try:
+            s3_path = os.getenv("S3_PATH")
+            EMR_CLUSTER_ID = os.getenv("EMR_CLUSTER_ID")
+            AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+            AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+            AWS_REGION = os.getenv("AWS_REGION", "eu-west-3")
+
+            emr_client = boto3.client(
+                'emr',
+                region_name=AWS_REGION,
+                aws_access_key_id=AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+            )
+
+            #logger.info("Initialized EMR client")
+
+            step_config = {
+                'Name': step,
+                'ActionOnFailure': 'CONTINUE',
+                'HadoopJarStep': {
+                    'Jar': 'command-runner.jar',
+                    'Args': [
+                        'bash',
+                        '-c',
+                        'cd /home/hadoop/ && ' 
+                        f'aws s3 sync {s3_path}/{step}/ /home/hadoop/{step}/ && '
+                        f'cd /home/hadoop/{step} && '
+                        'spark-submit --deploy-mode cluster --conf spark.pyspark.python=/home/hadoop/myenv/bin/python --py-files dependencies.py job.py '
+                    ] 
+                }
+            }
+
+            #logger.info(f"Adding step to EMR: {step_config}")
+
+            # Add the step to the EMR cluster
+            response = emr_client.add_job_flow_steps(
+                JobFlowId=EMR_CLUSTER_ID,
+                Steps=[step_config]
+            )
+
+            #logger.info(f"EMR step added: {response}")
+            return {'success': True, 'step_id': response['StepIds'][0]}
+        except Exception as e:
+            #logger.error(f"Error running EMR step: {str(e)}")
+            print(f"Error running EMR step: {str(e)}")
+            return {'success': False, 'error': str(e)}
