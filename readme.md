@@ -2,11 +2,16 @@
 
 ## 📊 Overview
 
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)
+![Amazon EMR](https://img.shields.io/badge/Amazon%20EMR-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)
+
 This project serves as the backend application for [marketplace-fe](https://github.com/Haabiy/marketplace-fe), a dynamic marketplace UI. Built with Django, it ensures seamless compatibility with the marketplace-fe API. 
 
 > 🔗 **Important:** Always use matching version release tags (e.g., v0.0.1) for both marketplace-fe (frontend) and marketplace-be (backend).
 
 ![ASGI Layout](./Assets/Consumer-Vs-Signal.png)
+
 
 ## 🔌 WebSocket Consumers
 
