@@ -433,7 +433,7 @@ class EMRConsumer(AsyncWebsocketConsumer):
             EMR_CLUSTER_ID = os.getenv("EMR_CLUSTER_ID")
             AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
             AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-            AWS_REGION = os.getenv("AWS_REGION", "eu-west-3")
+            AWS_REGION = os.getenv("AWS_REGION")
 
             emr_client = boto3.client(
                 'emr',
